@@ -1,0 +1,26 @@
+{
+    "definition": {
+        "openapi": "3.1.0",
+        "info": {
+          "title": "What3verAI with Swagger // TODO: add product name after we have a official one", 
+          "version": "0.1.0",
+          "description":
+            "This is the backend documentation for what3ver ai",
+          "license": {
+            "name": "MIT",
+            "url": "https://spdx.org/licenses/MIT.html"
+          },
+          "contact": {
+            "name": "What3verAI",
+            "url": "www.google.com",
+            "email": "what3verai@gmail.com"
+          }
+        },
+        "servers": [
+          {
+            "url": "http://localhost:8000"
+          }
+        ]
+      },
+      "apis": ["./src/application/swagger/*.ts"]
+}

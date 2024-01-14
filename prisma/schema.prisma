@@ -1,0 +1,200 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String          @id @default(uuid())
+  email          String          @unique
+  username       String          @unique
+  password       String
+  status         UserStatus      @default(UNVERIFIED)
+  tag            Identity        @default(REGULAR_USER)
+  avatarIcon     String ///Deafult image///
+  deletedAt      DateTime?
+  articles       Article[]
+  userSession    UserSession?
+  videoPost      VideoPost[]
+  followingTable FollowingTable?
+}
+
+enum Identity {
+  GAME_PROVIDER
+  REGULAR_USER
+}
+
+// model Provider {
+//   id        String    @id @default(uuid())
+//   email     String    @unique
+//   deletedAt DateTime?
+// }
+
+// model ProviderOneTimePasscode {
+//   email     String   @unique
+//   passcode  String
+//   expiredAt DateTime
+// }
+
+// model ProviderSession {
+//   id         String   @id @default(uuid())
+//   providerId String
+//   expiredAt  DateTime
+//   createdAt  DateTime @default(now())
+//   updatedAt  DateTime @default(now())
+// }
+
+enum UserStatus {
+  UNVERIFIED
+  VERIFIED
+  DELETED
+}
+
+model UserSession {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  expiredAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+}
+
+/// 现有ArticleId VideoPostId///
+
+model Article {
+  id          String     @id @default(uuid())
+  userId      String
+  user        User       @relation(fields: [userId], references: [id])
+  title       String
+  content     String
+  status      PostStatus @default(DRAFT)
+  comments    Comment[]
+  gameMention String[]   @default([])
+  imagePath   String[]   @default([])
+  createdAt   DateTime
+  updatedAt   DateTime
+  deletedAt   DateTime?
+}
+
+model ArticleImage {
+  postId    String
+  imagePath String
+
+  @@unique([postId, imagePath])
+}
+
+model VideoPost {
+  id                String             @id @default(uuid())
+  userId            String
+  user              User               @relation(fields: [userId], references: [id])
+  title             String             @db.VarChar(200)
+  description       String             @db.VarChar(1000)
+  status            PostStatus         @default(DRAFT)
+  comments          Comment[]
+  gameMention       String[]           @default([])
+  videoOriginalPath String
+  thumbnail         String
+  createdAt         DateTime
+  updatedAt         DateTime
+  deletedAt         DateTime?
+  VideoInformation  VideoInformation[]
+}
+
+model VideoInformation {
+  id                   String             @id @default(uuid())
+  postId               String
+  post                 VideoPost          @relation(fields: [postId], references: [id])
+  ///Format:.m3u8///
+  res360p              String
+  res480p              String
+  res720p              String
+  res1080p             String
+  videoOriginalPath    String             @unique
+  mediaConverterJobId  String             @unique
+  mediaConverterStatus VideoSlicingStatus
+}
+
+enum VideoSlicingStatus {
+  SUBMITTED
+  PROGRESSING
+  CANCELED
+  ERROR
+  COMPLETE
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+  DELETED
+}
+
+model Comment {
+  id          String       @id @default(uuid())
+  userId      String
+  content     String
+  subComments SubComment[]
+  deletedAt   DateTime?
+  Article     Article?     @relation(fields: [articleId], references: [id])
+  articleId   String?
+  VideoPost   VideoPost?   @relation(fields: [videoPostId], references: [id])
+  videoPostId String?
+}
+
+model SubComment {
+  id              String    @id @default(uuid())
+  userId          String
+  parentCommentId String
+  parentComment   Comment   @relation(fields: [parentCommentId], references: [id])
+  content         String
+  deletedAt       DateTime?
+}
+
+model GameInformation {
+  id                String         @id @default(uuid())
+  providerId        String
+  name              String
+  gameCategory      GameCategory[]
+  introduction      String
+  gameIconImagePath String
+  chain             String[]
+  status            PostStatus     @default(DRAFT)
+  videoPath         String?
+  chainMetaData     Json?
+  //token name, multiple chain Array Object
+  externalLink      Json?
+  chainModifiedGame Json?
+  deletedAt         DateTime?
+}
+
+model FollowingTable {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id])
+  followingId String[]
+  followerId  String[]
+}
+
+enum GameCategory {
+  ARCADE
+  BATTLE_ROYAL
+  CARD
+  CASUAL
+  FIGHTING
+  FPS
+  MMORPG
+  MOBA
+  PUZZLE
+  RACING
+  RPG
+  RTS
+  SANDBOX
+  SLG
+  SPORTS
+  TOWER_DEFENCE
+}
