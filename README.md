@@ -1,4 +1,4 @@
-# Wakuwaku Backend
+# Backend
 
 ## Local Development
 
