@@ -17,7 +17,7 @@ Install pgadmin on https://www.pgadmin.org/download/
 2. Rename `.env-example` to `.env`
 
 ```shell
-    cp .env-example .env1
+    cp .env-example .env
 ```
 
 3. Install dependencies:
