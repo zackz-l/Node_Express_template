@@ -1,6 +1,5 @@
-import './health';
-import './auth';
-import './article';
-import './game';
-import './user';
-import './video';
+import "./health";
+import "./auth";
+import "./game";
+import "./user";
+import "./video";
