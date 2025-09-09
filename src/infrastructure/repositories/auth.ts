@@ -1,15 +1,13 @@
-import { IAuthRepository } from '../../domain/aggregates/auth/auth-repository';
-import LoginUser from '../../domain/aggregates/auth/login-user';
-import SignupUser from '../../domain/aggregates/auth/signup-user';
-import FollowingStatus from '../../domain/aggregates/auth/following-status';
-import { UserQuery } from '../../domain/aggregates/auth/user-query';
-import { ProviderQuery } from '../../domain/aggregates/auth/provider-query';
-import { injectable } from 'inversify';
-import prisma from '../database/database';
-import { PostStatus, UserStatus } from '@prisma/client';
-import moment from 'moment';
-import { PostQuery } from '../../domain/aggregates/articles/article-query';
-import Post from '../../domain/aggregates/articles/article';
+import { IAuthRepository } from "../../domain/aggregates/auth/auth-repository";
+import LoginUser from "../../domain/aggregates/auth/login-user";
+import SignupUser from "../../domain/aggregates/auth/signup-user";
+import FollowingStatus from "../../domain/aggregates/auth/following-status";
+import { UserQuery } from "../../domain/aggregates/auth/user-query";
+import { ProviderQuery } from "../../domain/aggregates/auth/provider-query";
+import { injectable } from "inversify";
+import prisma from "../database/database";
+import { UserStatus } from "@prisma/client";
+import moment from "moment";
 
 @injectable()
 export default class AuthRepository implements IAuthRepository {
@@ -18,8 +16,8 @@ export default class AuthRepository implements IAuthRepository {
   ): Promise<LoginUser | undefined> {
     const user = await prisma.user.findUnique({
       where: {
-        email: userQuery.email
-      }
+        email: userQuery.email,
+      },
     });
 
     return user
@@ -38,8 +36,8 @@ export default class AuthRepository implements IAuthRepository {
   ): Promise<LoginUser | undefined> {
     const user = await prisma.user.findUnique({
       where: {
-        id: userQuery.userId
-      }
+        id: userQuery.userId,
+      },
     });
 
     return user && !user.deletedAt
@@ -47,13 +45,13 @@ export default class AuthRepository implements IAuthRepository {
       : undefined;
   }
 
-  public async foundEmailAndUsernameDuplication(
+  public async findEmailAndUsernameDuplication(
     userQuery: UserQuery
   ): Promise<boolean> {
     const findDuplicatedUserDocument = await prisma.user.findMany({
       where: {
-        OR: [{ username: userQuery.username }, { email: userQuery.email }]
-      }
+        OR: [{ username: userQuery.username }, { email: userQuery.email }],
+      },
     });
     return findDuplicatedUserDocument.length == 0 ? false : true;
   }
@@ -64,8 +62,8 @@ export default class AuthRepository implements IAuthRepository {
         email: signupUser.email,
         username: signupUser.username,
         password: signupUser.password,
-        avatarIcon: ''
-      }
+        avatarIcon: "",
+      },
     });
     return signupedUser.id;
   }
@@ -73,11 +71,11 @@ export default class AuthRepository implements IAuthRepository {
   public async verifyEmail(userId: string): Promise<string> {
     const verifiedUser = await prisma.user.update({
       where: {
-        id: userId
+        id: userId,
       },
       data: {
-        status: UserStatus.VERIFIED
-      }
+        status: UserStatus.VERIFIED,
+      },
     });
     return verifiedUser.id;
   }
@@ -90,15 +88,15 @@ export default class AuthRepository implements IAuthRepository {
     const userSession = await prisma.userSession.upsert({
       create: {
         userId,
-        expiredAt
+        expiredAt,
       },
       update: {
         expiredAt,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       },
       where: {
-        userId
-      }
+        userId,
+      },
     });
 
     return userSession?.id;
@@ -111,8 +109,8 @@ export default class AuthRepository implements IAuthRepository {
     const userSession = await prisma.userSession.findFirst({
       where: {
         id: sessionId,
-        userId
-      }
+        userId,
+      },
     });
     const now = new Date();
 
@@ -122,11 +120,11 @@ export default class AuthRepository implements IAuthRepository {
     now.setDate(now.getDate() + 1);
     await prisma.userSession.update({
       where: {
-        id: userSession.id
+        id: userSession.id,
       },
       data: {
-        expiredAt: now
-      }
+        expiredAt: now,
+      },
     });
     return true;
   }
@@ -136,8 +134,8 @@ export default class AuthRepository implements IAuthRepository {
   ): Promise<LoginUser | undefined> {
     const user = await prisma.user.findUnique({
       where: {
-        username: userQuery.username
-      }
+        username: userQuery.username,
+      },
     });
 
     return user
@@ -148,11 +146,11 @@ export default class AuthRepository implements IAuthRepository {
   public async updateUserPassword(loginUser: LoginUser): Promise<string> {
     await prisma.user.update({
       where: {
-        id: loginUser.id
+        id: loginUser.id,
       },
       data: {
-        password: loginUser.password
-      }
+        password: loginUser.password,
+      },
     });
     return loginUser.id;
   }
@@ -162,11 +160,11 @@ export default class AuthRepository implements IAuthRepository {
       data: {
         email: `${loginUser.email}-${loginUser.id}`,
         username: `${loginUser.username}-${loginUser.id}`,
-        deletedAt: new Date()
+        deletedAt: new Date(),
       },
       where: {
-        id: loginUser.id
-      }
+        id: loginUser.id,
+      },
     });
     return loginUser.id;
   }
@@ -177,118 +175,12 @@ export default class AuthRepository implements IAuthRepository {
   ): Promise<string> {
     const updateUser = await prisma.user.update({
       where: {
-        id: userId
+        id: userId,
       },
       data: {
-        username: username
-      }
+        username: username,
+      },
     });
     return updateUser.id;
-  }
-
-  public async getPostNumber(loginUser: LoginUser): Promise<number> {
-    const postCount = await prisma.article.count({
-      where: {
-        userId: loginUser.id,
-        status: PostStatus.PUBLISHED
-      }
-    });
-    return postCount;
-  }
-
-  public async getProviderByEmail(
-    providerQuery: ProviderQuery
-  ): Promise<string | undefined> {
-    const provider = await prisma.user.findUnique({
-      where: {
-        email: providerQuery.email
-      }
-    });
-
-    return provider ? provider.id : undefined;
-  }
-
-  public async createProvider(providerQuery: ProviderQuery): Promise<string> {
-    const createdProvider = await prisma.user.create({
-      data: {
-        email: providerQuery.email!,
-        password: providerQuery.passcode!,
-        avatarIcon: '',
-        username: providerQuery.userName!
-      }
-    });
-    return createdProvider.id;
-  }
-
-  public async getProviderPasscode(
-    providerQuery: ProviderQuery
-  ): Promise<string | undefined> {
-    const provider = await prisma.user.findUnique({
-      where: {
-        email: providerQuery.email
-      }
-    });
-    return provider ? provider.password : undefined;
-  }
-
-  // public async deleteProviderPasscode(email: string): Promise<void> {
-  //   const providerPasscode = await prisma.providerOneTimePasscode.delete({
-  //     where: {
-  //       email: email
-  //     }
-  //   });
-  // }
-
-  public async updateProviderPasscode(
-    email: string,
-    passcode: string
-  ): Promise<string> {
-    const existedProvider = await prisma.user.update({
-      where: {
-        email: email
-      },
-      data: {
-        password: passcode
-      }
-    });
-    return existedProvider.password;
-  }
-
-  public async verifyPasscode(
-    email: string,
-    passcode: string
-  ): Promise<boolean> {
-    const verifiedPasscode = await prisma.user.findFirst({
-      where: {
-        email: email,
-        password: passcode
-      }
-    });
-    return verifiedPasscode != null;
-  }
-
-  public async createProviderSession(providerId: string): Promise<string> {
-    const now = new Date();
-    now.setDate(now.getDate() + 1);
-    const expiredAt = now;
-    const createdProviderSession = await prisma.userSession.create({
-      data: {
-        userId: providerId,
-        expiredAt: expiredAt
-      }
-    });
-    return createdProviderSession.id;
-  }
-
-  public async getDraftsByUserid(
-    postQuery: PostQuery
-  ): Promise<Post[] | undefined> {
-    const posts = await prisma.article.findMany({
-      where: {
-        userId: postQuery.userId,
-        status: postQuery.status
-      }
-    });
-    return posts;
   }
 }

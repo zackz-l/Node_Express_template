@@ -16,13 +16,9 @@ import UnfollowUserRequest from "../api-models/user/unfollow-user-request";
 import AuthService from "../../domain/services/auth";
 import { inject } from "inversify";
 import ChangePasswordRequest from "../api-models/user/change-password-request";
-import GetUserResponse from "../api-models/user/get-user-by-username-response";
 import UpdateUsernameRequest from "../api-models/user/update-username-request";
-import getPostNumberByUserIdRequest from "../api-models/user/get-post-number-request";
 import authenticate from "../middlewares/authenticate";
 import VerifyEmailRequest from "../api-models/user/verify-email-request";
-import ProviderSigninRequest from "../api-models/provider/signin-request";
-import VerifyPasscodeRequest from "../api-models/provider/verify-passcode";
 
 @controller("/auth")
 export default class AuthController {
@@ -105,59 +101,5 @@ export default class AuthController {
       username
     );
     response.status(HttpStatusCode.OK).json({ id: updateUserId });
-  }
-
-  @httpPost("/provider/login")
-  public async providerLogin(
-    request: Request,
-    response: Response
-  ): Promise<void> {
-    const providerSigninRequest = await new ProviderSigninRequest(
-      request
-    ).validate();
-    const { email } = providerSigninRequest;
-    const providerId = await this.authService.providerLogin(email);
-    response.status(HttpStatusCode.OK).json({ id: providerId });
-  }
-
-  @httpPost("/provider/verify-passcode")
-  public async verifyPasscode(
-    request: Request,
-    response: Response
-  ): Promise<void> {
-    const verifyPasscodeRequest = await new VerifyPasscodeRequest(
-      request
-    ).validate();
-    const { email, passcode } = verifyPasscodeRequest;
-    const { providerId, providerSessionId } =
-      await this.authService.verifyPasscode(email, passcode);
-
-    response
-      .status(HttpStatusCode.OK)
-      .json({ providerId: providerId, providerSessionId: providerSessionId });
-  }
-
-  @httpPost("/users/:followingId/follow")
-  public async followUsers(
-    request: Request,
-    response: Response
-  ): Promise<void> {
-    const followUserRequest = await new FollowUserRequest(request).validate();
-    const { userId, followingId } = followUserRequest;
-    const id = await this.authService.followUser(userId, followingId);
-    response.status(HttpStatusCode.OK).json({ userId: id });
-  }
-
-  @httpPost("/users/:unfollowId/unfollow")
-  public async unfollowUsers(
-    request: Request,
-    response: Response
-  ): Promise<void> {
-    const unfollowUserRequest = await new UnfollowUserRequest(
-      request
-    ).validate();
-    const { userId, unfollowId } = unfollowUserRequest;
-    const id = await this.authService.unfollowUser(userId, unfollowId);
-    response.status(HttpStatusCode.OK).json({ userId: id });
   }
 }

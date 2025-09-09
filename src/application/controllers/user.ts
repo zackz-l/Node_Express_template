@@ -24,8 +24,8 @@ import UpdateUsernameRequest from "../api-models/user/update-username-request";
 import getPostNumberByUserIdRequest from "../api-models/user/get-post-number-request";
 import authenticate from "../middlewares/authenticate";
 import VerifyEmailRequest from "../api-models/user/verify-email-request";
-import ProviderSigninRequest from "../api-models/provider/signin-request";
-import VerifyPasscodeRequest from "../api-models/provider/verify-passcode";
+// import ProviderSigninRequest from "../api-models/provider/signin-request";
+// import VerifyPasscodeRequest from "../api-models/provider/verify-passcode";
 
 @controller("/users")
 export default class UserController {
@@ -63,70 +63,5 @@ export default class UserController {
     response
       .status(HttpStatusCode.OK)
       .json(GetUserResponse.fromLoginUser(loginUser));
-  }
-
-  @httpGet("/:id/publishposts/count")
-  public async getPostNumberByUserId(
-    request: Request,
-    response: Response
-  ): Promise<void> {
-    const getPostNumberRequest = await new getPostNumberByUserIdRequest(
-      request
-    ).validate();
-    const { userId } = getPostNumberRequest;
-    const getPostNumberUser = await this.userService.getPostNumber(userId);
-    response.status(HttpStatusCode.OK).json({ postCount: getPostNumberUser });
-  }
-
-  @httpGet("/:userId/followerscount")
-  public async getFollowersCount(
-    request: Request,
-    response: Response
-  ): Promise<void> {
-    const getFollowerCountRequest = await new GetFollowerCountRequest(
-      request
-    ).validate();
-    const { userId } = getFollowerCountRequest;
-    const count = await this.userService.getFollowersCount(userId);
-    response.status(HttpStatusCode.OK).json({ followerCount: count });
-  }
-
-  @httpGet("/:userId/followingscount")
-  public async getFollowingsCount(
-    request: Request,
-    response: Response
-  ): Promise<void> {
-    const getFollowingCountRequest = await new GetFollowingCountRequest(
-      request
-    ).validate();
-    const { userId } = getFollowingCountRequest;
-    const count = await this.userService.getFollowingsCount(userId);
-    response.status(HttpStatusCode.OK).json({ followerCount: count });
-  }
-
-  @httpGet("/:userId/followers")
-  public async getFollowers(
-    request: Request,
-    response: Response
-  ): Promise<void> {
-    const getFollowersRequest = await new GetFollowersRequest(
-      request
-    ).validate();
-    const { userId } = getFollowersRequest;
-    const followersList = await this.userService.getFollowersList(userId);
-    response.status(HttpStatusCode.OK).json({ followerList: followersList });
-  }
-
-  @httpGet("/:userId/followings")
-  public async getFollowings(
-    request: Request,
-    response: Response
-  ): Promise<void> {
-    const getFollowingsRequest = await new GetFollowingsRequest(
-      request
-    ).validate();
-    const { userId } = getFollowingsRequest;
-    const followingsList = await this.userService.getFollowingsList(userId);
-    response.status(HttpStatusCode.OK).json({ followingList: followingsList });
   }
 }

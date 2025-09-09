@@ -1,24 +1,22 @@
-import { IAuthRepository } from '../aggregates/auth/auth-repository';
-import LoginUser from '../aggregates/auth/login-user';
-import SignupUser from '../aggregates/auth/signup-user';
-import { UserQuery } from '../aggregates/auth/user-query';
-import { ProviderQuery } from '../aggregates/auth/provider-query';
-import TYPES from '../constants/types';
+import { IAuthRepository } from "../aggregates/auth/auth-repository";
+import LoginUser from "../aggregates/auth/login-user";
+import SignupUser from "../aggregates/auth/signup-user";
+import { UserQuery } from "../aggregates/auth/user-query";
+import { ProviderQuery } from "../aggregates/auth/provider-query";
+import TYPES from "../constants/types";
 import {
   AuthenticationError,
   ValidationError,
-  ERROR_CODE
-} from '../../errors/index';
-import { inject, injectable } from 'inversify';
-import { NotFoundError } from '../../errors';
-import { BaseError } from '../../errors';
-import { ITokenUtilities } from '../contracts/token-utilities';
-import { IEmailSender } from '../contracts/email-sender';
-import FollowingStatus from '../aggregates/auth/following-status';
-import { PostQuery } from '../aggregates/articles/article-query';
-import { PostStatus } from '@prisma/client';
-import Post from '../aggregates/articles/article';
-import { IUserRepository } from '../aggregates/users/user-repository';
+  ERROR_CODE,
+} from "../../errors/index";
+import { inject, injectable } from "inversify";
+import { NotFoundError } from "../../errors";
+import { BaseError } from "../../errors";
+import { ITokenUtilities } from "../contracts/token-utilities";
+import { IEmailSender } from "../contracts/email-sender";
+import FollowingStatus from "../aggregates/auth/following-status";
+
+import { IUserRepository } from "../aggregates/users/user-repository";
 
 @injectable()
 export default class AuthService {
@@ -130,11 +128,9 @@ export default class AuthService {
   ): Promise<boolean> {
     const signupUserQuery: UserQuery = {
       username: signupUser.username,
-      email: signupUser.email
+      email: signupUser.email,
     };
-    return this.authRepository.foundEmailAndUsernameDuplication(
-      signupUserQuery
-    );
+    return this.authRepository.findEmailAndUsernameDuplication(signupUserQuery);
   }
 
   public async updateUserPassword(
@@ -180,146 +176,5 @@ export default class AuthService {
       ERROR_CODE.USER_NOT_FOUND,
       `Delete user with userId: ${userId} does not exist.`
     );
-  }
-
-  public async providerLogin(email: string): Promise<string> {
-    const passcode = Math.floor(100000 + Math.random() * 900000).toString();
-    const userName =
-      Math.floor(100000 + Math.random() * 900000).toString() + 'User';
-    const providerQuery: ProviderQuery = { email, passcode, userName };
-    let providerId: string | undefined;
-    providerId = await this.authRepository.getProviderByEmail(providerQuery);
-    if (!providerId) {
-      providerId = await this.authRepository.createProvider(providerQuery);
-    }
-
-    // if (await this.authRepository.getProviderPasscode(providerQuery)) {
-    //   await this.authRepository.deleteProviderPasscode(email);
-    // }
-
-    const providerPasscode = await this.authRepository.updateProviderPasscode(
-      email,
-      passcode
-    );
-    this.emailSender.sendProviderPasscodeEmail(email, providerPasscode);
-    return providerId;
-  }
-
-  public async verifyPasscode(
-    email: string,
-    passcode: string
-  ): Promise<{ providerId: string; providerSessionId: string }> {
-    const providerQuery: ProviderQuery = { email };
-    const providerId = await this.authRepository.getProviderByEmail(
-      providerQuery
-    );
-    if (!providerId) {
-      throw new AuthenticationError(
-        ERROR_CODE.AUTHENTICATION_ERROR,
-        `Provider trying to verify passcode with email: ${email} does not exist.`
-      );
-    }
-
-    const verifiedPasscode = await this.authRepository.verifyPasscode(
-      email,
-      passcode
-    );
-    if (!verifiedPasscode) {
-      throw new AuthenticationError(
-        ERROR_CODE.AUTHENTICATION_ERROR,
-        `Failed to verify the provider with the email ${email} as the passcode entered does not match.`
-      );
-    }
-    // const deletedPasscode = await this.authRepository.deleteProviderPasscode(
-    //   email
-    // );
-    const providerSessionId = await this.authRepository.createProviderSession(
-      providerId
-    );
-    return { providerId, providerSessionId };
-  }
-
-  public async followUser(
-    userId: string,
-    followingUserId: string
-  ): Promise<string> {
-    /*Check if both user appear in the followingstatus table
-      user has following(who user follow) and follower(who follows user)*/
-    const userExist = await this.userRepository.userExist(userId);
-    if (userId === followingUserId) {
-      throw new ValidationError(
-        ERROR_CODE.CANNOT_FOLLOW_OR_UNFOLLOW_YOURSELF,
-        `You can not follow yourself`
-      );
-    }
-    const followingUserExist = await this.userRepository.userExist(
-      followingUserId
-    );
-    /// the followingUserId does not appear in the table///
-    if (!followingUserExist) {
-      await this.userRepository.createFollowerTable(followingUserId, userId);
-    } else {
-      /// the following user appear in the table///
-      var followerData = await this.userRepository.queryFollowingData(
-        followingUserId
-      );
-      if (followerData.followerId.includes(userId)) {
-        throw new NotFoundError(
-          ERROR_CODE.ALREADY_FOLLOWED,
-          `You already followed this user with userId: ${userId}`
-        );
-      }
-      /// push the userId into the follwerId array of FollowingUserId///
-      followerData.followerId.push(userId);
-      await this.userRepository.updateFollowerTable(
-        followingUserId,
-        followerData.followerId
-      );
-    }
-    /// the userId does not appear in the table///
-    if (!userExist) {
-      return await this.userRepository.createFollowingTable(
-        userId,
-        followingUserId
-      );
-    }
-    var followingData = await this.userRepository.queryFollowingData(userId);
-    followingData.followingId.push(followingUserId);
-    return await this.userRepository.updateFollowingTable(
-      userId,
-      followingData.followingId
-    );
-  }
-
-  public async unfollowUser(
-    userId: string,
-    unfollowUserId: string
-  ): Promise<string> {
-    if (userId === unfollowUserId) {
-      throw new ValidationError(
-        ERROR_CODE.CANNOT_FOLLOW_OR_UNFOLLOW_YOURSELF,
-        `You can not unfollow yourself`
-      );
-    }
-    var followingData = await this.userRepository.queryFollowingData(userId);
-    ///remove unfollowUserId from userId's followingId array///
-    followingData.followingId = followingData.followingId.filter(
-      (userId) => userId !== unfollowUserId
-    );
-    const id = await this.userRepository.updateFollowingTable(
-      userId,
-      followingData.followingId
-    );
-    var followerData = await this.userRepository.queryFollowingData(
-      unfollowUserId
-    );
-    followerData.followerId = followerData.followerId.filter(
-      (followerId) => followerId !== userId
-    );
-    await this.userRepository.updateFollowerTable(
-      unfollowUserId,
-      followerData.followerId
-    );
-    return id;
   }
 }
