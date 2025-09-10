@@ -15,7 +15,7 @@ model User {
   username   String     @unique
   password   String
   status     UserStatus @default(UNVERIFIED)
-  avatarIcon String ///Deafult image///
+  avatarIcon String? ///Deafult image///
   deletedAt  DateTime?
 
   UserSession UserSession?
