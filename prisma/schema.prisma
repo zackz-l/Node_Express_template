@@ -15,16 +15,10 @@ model User {
   username   String     @unique
   password   String
   status     UserStatus @default(UNVERIFIED)
-  tag        Identity   @default(REGULAR_USER)
   avatarIcon String ///Deafult image///
   deletedAt  DateTime?
 
   UserSession UserSession?
-}
-
-enum Identity {
-  GAME_PROVIDER
-  REGULAR_USER
 }
 
 enum UserStatus {
