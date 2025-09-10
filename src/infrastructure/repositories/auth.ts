@@ -21,13 +21,7 @@ export default class AuthRepository implements IAuthRepository {
     });
 
     return user
-      ? new LoginUser(
-          user.username,
-          user.email,
-          user.password,
-          user.id,
-          user.tag
-        )
+      ? new LoginUser(user.username, user.email, user.password, user.id)
       : undefined;
   }
 
