@@ -11,8 +11,6 @@ import {
 import SignupRequest from "../api-models/user/signup-request";
 import SigninRequest from "../api-models/user/signin-request";
 import DeleteRequest from "../api-models/user/delete-user-request";
-import FollowUserRequest from "../api-models/user/follow-user-request";
-import UnfollowUserRequest from "../api-models/user/unfollow-user-request";
 import AuthService from "../../domain/services/auth";
 import { inject } from "inversify";
 import ChangePasswordRequest from "../api-models/user/change-password-request";
