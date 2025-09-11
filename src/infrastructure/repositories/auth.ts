@@ -6,7 +6,7 @@ import { UserQuery } from "../../domain/aggregates/auth/user-query";
 import { ProviderQuery } from "../../domain/aggregates/auth/provider-query";
 import { injectable } from "inversify";
 import prisma from "../database/database";
-import { UserStatus } from "@prisma/client";
+import { UserStatus } from ".prisma";
 import moment from "moment";
 
 @injectable()
